@@ -1,4 +1,4 @@
 import random
 import pygame
 
-print("Hello World.  Hi Lucsas!")
+print("Hello World.  Hi Lucas!")
