@@ -8,4 +8,6 @@ while running:
     
     screen.fill((0, 255, 0))
 
+
+    pygame.display.flip()
 pygame.quit()
