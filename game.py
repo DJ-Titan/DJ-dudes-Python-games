@@ -8,7 +8,7 @@ while running:
     
     # Press a key to exit the game loop
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT: # Click the X Button to quit
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:  # Press Escape to exit
@@ -16,6 +16,8 @@ while running:
 
     screen.fill((0, 255, 0)) # set the background color to green
 
+    rectangle = pygame.Rect((200, 200),(100, 100))
+    screen.fill((0, 0, 255),rectangle)
 
     pygame.display.flip()
 pygame.quit()
