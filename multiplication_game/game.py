@@ -45,7 +45,10 @@ ASTEROID_SPEED=1.0
 
 # global sprites in memory
 asteroid_sprites = [
-    pygame.image.load(sprite_dir.joinpath('Asteroid.png')).convert_alpha()
+    pygame.image.load(sprite_dir.joinpath('Asteroid.png')).convert_alpha(),
+    pygame.image.load(sprite_dir.joinpath('Asteroid2.png')).convert_alpha(),
+    pygame.image.load(sprite_dir.joinpath('Asteroid3.png')).convert_alpha(),
+    pygame.image.load(sprite_dir.joinpath('Asteroid4.png')).convert_alpha()
 ]
 ship_sprite = pygame.image.load(sprite_dir.joinpath('ship.png')).convert_alpha()
 
@@ -94,7 +97,7 @@ class Asteroid(pygame.sprite.Sprite):
         self.radius = 40
         self.image = pygame.Surface([self.radius * 2, self.radius * 2], pygame.SRCALPHA)
         #pygame.draw.circle(self.image, (150, 150, 150), (self.radius, self.radius), self.radius)
-        self.image.blit(asteroid_sprites[0],(0,0))
+        self.image.blit(asteroid_sprites[random.randint(0,3)],(0,0))
         # Add the problem text
         font_medium.set_bold(True)
         text_surface = font_medium.render(self.problem_str, True, YELLOW)
