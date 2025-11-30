@@ -3,6 +3,7 @@ import random
 import sys
 import time
 from pathlib import Path
+from analytics import UserProfile
 
 # --- Pygame Initialization ---
 pygame.init()
@@ -16,6 +17,7 @@ pygame.display.set_caption("Multiplication Shooter: Asteroid Defense")
 # File Locations
 app_dir = Path(__file__).parent
 sprite_dir = app_dir.joinpath("sprites/")
+data_dir = app_dir.joinpath("data/")
 
 # Renderable Dimensions
 HUD_HEIGHT=40
@@ -52,15 +54,22 @@ asteroid_sprites = [
 ]
 ship_sprite = pygame.image.load(sprite_dir.joinpath('ship.png')).convert_alpha()
 
+# User Profile Data
+user_profile = UserProfile(data_dir.joinpath("dave.xlsx"))
+
+
 # --- Utility Functions ---
 
 def generate_problem():
     """Generates a random multiplication problem (1-12 tables)."""
-    a = random.randint(1, 12)
-    b = random.randint(1, 12)
+    valid_problem=False
+    while (not valid_problem):
+        a = random.randint(1, 12)
+        b = random.randint(1, 12)
+        valid_problem = user_profile.isQuestionValid(a,b)
     problem = f"{a} \u00D7 {b}" # \u00D7 is the multiplication sign
     answer = a * b
-    return problem, answer
+    return problem, a, b, answer
 
 
 class SpriteSheet:
@@ -93,7 +102,11 @@ class Asteroid(pygame.sprite.Sprite):
     """Represents an asteroid carrying a math problem."""
     def __init__(self, speed = ASTEROID_SPEED):
         super().__init__()
-        self.problem_str, self.answer = generate_problem()
+        self.problem_str, a, b, self.answer = generate_problem()
+        self.a=a
+        self.b=b
+        self.start_time=time.time()
+        self.stop_time = self.start_time
         self.radius = 40
         self.image = pygame.Surface([self.radius * 2, self.radius * 2], pygame.SRCALPHA)
         #pygame.draw.circle(self.image, (150, 150, 150), (self.radius, self.radius), self.radius)
@@ -115,6 +128,7 @@ class Asteroid(pygame.sprite.Sprite):
         self.rect.y += self.speed
         if self.rect.bottom > SCREEN_RENDER_HEIGHT:
             global game_over
+            self.stop_time=time.time()
             game_over = True
 
     def draw(self):
@@ -299,10 +313,14 @@ def draw_hud(surface):
     score_text = font_medium.render(f"Score: {score}", True, WHITE)
     surface.blit(score_text, (10, 10))
 
-def draw_game_over(surface):
+def draw_game_over(surface, current_asteroid:Asteroid):
     """Draws the game over screen."""
     surface.fill(BLACK)
-    
+
+    problem_text = font_large.render(f"{current_asteroid.problem_str} = {current_asteroid.answer}", True, RED)
+    problem_rect = problem_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
+    surface.blit(problem_text, problem_rect)
+
     title_text = font_large.render("GAME OVER", True, RED)
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
     surface.blit(title_text, title_rect)
@@ -328,8 +346,14 @@ while running:
         if game_over:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
+                    
+                    user_profile.logQuestionResults(False, current_asteroid.a, current_asteroid.b, current_asteroid.stop_time-current_asteroid.start_time)
+                    user_profile.writePerformanceResultsToFile()
                     gun, current_asteroid, starfield = initialize_game()
                 elif event.key == pygame.K_q:
+                    
+                    user_profile.logQuestionResults(False, current_asteroid.a, current_asteroid.b, current_asteroid.stop_time-current_asteroid.start_time)
+                    user_profile.writePerformanceResultsToFile()                    
                     running = False
             continue
 
@@ -345,6 +369,7 @@ while running:
                     user_answer = int(current_input)
                     if (user_answer == current_asteroid.answer)&(gun.fizzle_effect==False):
                         # Correct answer: Fire projectile
+                        user_profile.logQuestionResults(True, current_asteroid.a, current_asteroid.b, current_asteroid.stop_time-current_asteroid.start_time)
                         new_projectile = Projectile(gun.rect.centerx, gun.rect.top)
                         projectiles.add(new_projectile)
                         all_sprites.add(new_projectile)
@@ -413,13 +438,14 @@ while running:
 
     else:
         # Game Over Screen
-        draw_game_over(screen)
+        draw_game_over(screen, current_asteroid)
 
     # Always update the display
     pygame.display.flip()
     
     # Cap the frame rate
     clock.tick(60)
+
 
 pygame.quit()
 sys.exit()

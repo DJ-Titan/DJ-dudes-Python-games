@@ -1,1 +1,3 @@
 **__pycache__
+multiplication_game/data/*.xlsx
+!multiplication_game/data/data-template.xlsx
