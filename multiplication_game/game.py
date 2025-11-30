@@ -193,7 +193,7 @@ class StarField:
             [] # Smallest Stars
         ]
         star_ratio = [5, 2, 20, 100]   # by column index: Medium, Large, Small, Smallest...  For every 100 smallest stars, there are 2 Large and 5 Medium stars...
-        star_speed = [.5, .35, .1, .05] # by column index: Medium, Large, Small, Smallest... Smallest stars are furthest away and slowest
+        star_speed = [.25, .5, .125, .06] # by column index: Medium, Large, Small, Smallest... Smallest stars are furthest away and slowest
 
         STAR_ROWS=3
         self.__SPRITE_WIDTH=8
@@ -334,7 +334,7 @@ while running:
             continue
 
         if event.type == pygame.KEYDOWN:
-            print(event.key)
+
             if (event.key == pygame.K_a) | (event.key == pygame.K_LEFT):
                 gun.moving_left = True
             elif (event.key == pygame.K_d) | (event.key == pygame.K_RIGHT):
