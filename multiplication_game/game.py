@@ -45,6 +45,8 @@ clock = pygame.time.Clock()
 last_fizzle_time = 0
 SHIP_SPEED=5
 ASTEROID_SPEED=1.0
+game_time_start = time.time()
+game_time_stop = time.time()
 
 # global sprites in memory
 asteroid_sprites = [
@@ -142,6 +144,8 @@ class Asteroid(pygame.sprite.Sprite):
         if self.rect.bottom > SCREEN_RENDER_HEIGHT:
             global game_over
             self.stop_time=time.time()
+            global game_time_stop
+            game_time_stop = time.time()
             game_over = True
 
     def draw(self):
@@ -270,7 +274,7 @@ class StarField:
 
 def initialize_game():
     """Sets up initial game state and objects."""
-    global score, game_over, current_input, all_sprites, asteroids, projectiles
+    global score, game_over, current_input, all_sprites, asteroids, projectiles, game_time_start, game_time_stop
     
 
 
@@ -292,6 +296,9 @@ def initialize_game():
     gun = Gun()
     starfield = StarField()
     
+    game_time_start = time.time()
+    game_time_stop = time.time()
+
     return gun, new_asteroid, starfield
 
 
@@ -349,31 +356,40 @@ def draw_game_over(surface, current_asteroid:Asteroid):
 
 # --- Game Loop ---
 running = True
+
 while running:
     
     # --- Event Handling ---
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            game_time_stop = time.time()
+            play_duration=game_time_stop-game_time_start
+            user_profile.writePerformanceResultsToFile(play_duration)            
             running = False
+        
             
         if game_over:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     
                     user_profile.logQuestionResults(False, current_asteroid.a, current_asteroid.b, current_asteroid.stop_time-current_asteroid.start_time)
-                    user_profile.writePerformanceResultsToFile()
+                    play_duration=game_time_stop-game_time_start
+                    user_profile.writePerformanceResultsToFile(play_duration)
                     gun, current_asteroid, starfield = initialize_game()
                 elif event.key == pygame.K_q:
                     
                     user_profile.logQuestionResults(False, current_asteroid.a, current_asteroid.b, current_asteroid.stop_time-current_asteroid.start_time)
-                    user_profile.writePerformanceResultsToFile()                    
+                    play_duration=game_time_stop-game_time_start
+                    user_profile.writePerformanceResultsToFile(play_duration)                    
                     running = False
             continue
 
         if event.type == pygame.KEYDOWN:
 
             if (event.key==pygame.K_ESCAPE):
-                user_profile.writePerformanceResultsToFile()
+                game_time_stop = time.time()
+                play_duration=game_time_stop-game_time_start
+                user_profile.writePerformanceResultsToFile(play_duration)
                 running = False
             if (event.key == pygame.K_a) | (event.key == pygame.K_LEFT):
                 gun.moving_left = True
@@ -462,7 +478,6 @@ while running:
     
     # Cap the frame rate
     clock.tick(60)
-
 
 pygame.quit()
 sys.exit()

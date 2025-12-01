@@ -1,5 +1,6 @@
 import pandas as pd
 import statistics
+import datetime
 
 class UserProfile:
     def __init__(self, excel_filepath: str):
@@ -7,6 +8,8 @@ class UserProfile:
         try:
             self.__df_focus = pd.read_excel(self.__excel_filepath, sheet_name='Focus Problems',index_col=0,)
             self.__df_performance = pd.read_excel(self.__excel_filepath, sheet_name='Performance')
+            self.__df_daily_log = pd.read_excel(self.__excel_filepath, sheet_name='Daily Log', index_col=0)
+
         except PermissionError as e:
             raise PermissionError(f"Please make sure you don't have the file {self.__excel_filepath} open in another program.  {e}")
         print('Hello World')
@@ -48,10 +51,22 @@ class UserProfile:
             new_avg = statistics.mean(total_answer_durations)
             self.__df_performance.at[question_row_index,'Avg Time to Answer']=new_avg
 
-    def writePerformanceResultsToFile(self):
+    def writePerformanceResultsToFile(self, play_duration:float):
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        try:
+            minutes_from_earlier_today = self.__df_daily_log.at[today,'Duration (Minutes)']
+            if minutes_from_earlier_today:
+                total_minutes_today = minutes_from_earlier_today+(play_duration/60)
+            else:
+                total_minutes_today = play_duration/60
+            self.__df_daily_log.at[today,'Duration (Minutes)']=total_minutes_today
+        except:
+            df_temp = pd.DataFrame({'Duration (Minutes)':[play_duration/60]}, index=[today])
+            self.__df_daily_log = pd.concat([self.__df_daily_log,df_temp])
         print("Writing Player Session Data to file")
         with pd.ExcelWriter(self.__excel_filepath, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             self.__df_performance.to_excel(writer, sheet_name='Performance', index=False)
+            self.__df_daily_log.to_excel(writer, sheet_name='Daily Log', index=True)
 
     def showResults(self):
         pass

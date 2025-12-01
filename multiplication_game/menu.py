@@ -3,6 +3,7 @@ from pathlib import Path
 import pygame
 import sys
 import pandas as pd
+import datetime
 
 # Colors
 BLACK = (0, 0, 0)
@@ -155,9 +156,14 @@ class MenuSystem:
                                     })
                                     df_performance = pd.concat([df_performance,df_temp])
                             df_performance = df_performance.reset_index(drop=True)
+
+                            today = datetime.datetime.now().strftime('%Y-%m-%d')
+                            df_daily_log = pd.DataFrame({'Date':[today],'Duration (Minutes)':[0]})
+
                             with pd.ExcelWriter(self.__data_dir.joinpath(f'{new_profile_input}.xlsx'), engine='openpyxl', mode='w') as writer:
                                 df_focus.to_excel(writer,sheet_name = 'Focus Problems',index = True)
                                 df_performance.to_excel(writer, sheet_name='Performance', index=False)
+                                df_daily_log.to_excel(writer, sheet_name='Daily Log', index=False)
 
                             return new_profile_input
                         
