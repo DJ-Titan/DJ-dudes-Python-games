@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 from analytics import UserProfile
+from menu import MenuSystem
 
 # --- Pygame Initialization ---
 pygame.init()
@@ -49,14 +50,26 @@ ASTEROID_SPEED=1.0
 asteroid_sprites = [
     pygame.image.load(sprite_dir.joinpath('Asteroid.png')).convert_alpha(),
     pygame.image.load(sprite_dir.joinpath('Asteroid2.png')).convert_alpha(),
-    pygame.image.load(sprite_dir.joinpath('Asteroid3.png')).convert_alpha(),
     pygame.image.load(sprite_dir.joinpath('Asteroid4.png')).convert_alpha()
 ]
 ship_sprite = pygame.image.load(sprite_dir.joinpath('ship.png')).convert_alpha()
 
-# User Profile Data
-user_profile = UserProfile(data_dir.joinpath("dave.xlsx"))
+# Profile Select Menu
+menu = MenuSystem(data_dir, screen, font_large, font_medium)
+selected_profile_name = menu.profile_menu()
+#user_profile = UserProfile(data_dir.joinpath("dave.xlsx"))
 
+# Check if a profile was selected or created
+if selected_profile_name:
+    profile_filename = data_dir.joinpath(f"{selected_profile_name}.xlsx")
+    # This will either load the existing file or create a new one
+    user_profile = UserProfile(profile_filename) 
+    #print(f"Game loaded with profile: {user_profile.filepath.name}")
+else:
+    # If the user closes the menu (e.g., hits QUIT), we exit the game.
+    print("No profile selected. Exiting game.")
+    pygame.quit()
+    sys.exit()
 
 # --- Utility Functions ---
 
@@ -110,7 +123,7 @@ class Asteroid(pygame.sprite.Sprite):
         self.radius = 40
         self.image = pygame.Surface([self.radius * 2, self.radius * 2], pygame.SRCALPHA)
         #pygame.draw.circle(self.image, (150, 150, 150), (self.radius, self.radius), self.radius)
-        self.image.blit(asteroid_sprites[random.randint(0,3)],(0,0))
+        self.image.blit(asteroid_sprites[random.randint(0,len(asteroid_sprites)-1)],(0,0))
         # Add the problem text
         font_medium.set_bold(True)
         text_surface = font_medium.render(self.problem_str, True, YELLOW)
@@ -359,6 +372,9 @@ while running:
 
         if event.type == pygame.KEYDOWN:
 
+            if (event.key==pygame.K_ESCAPE):
+                user_profile.writePerformanceResultsToFile()
+                running = False
             if (event.key == pygame.K_a) | (event.key == pygame.K_LEFT):
                 gun.moving_left = True
             elif (event.key == pygame.K_d) | (event.key == pygame.K_RIGHT):
@@ -369,6 +385,7 @@ while running:
                     user_answer = int(current_input)
                     if (user_answer == current_asteroid.answer)&(gun.fizzle_effect==False):
                         # Correct answer: Fire projectile
+                        current_asteroid.stop_time=time.time()
                         user_profile.logQuestionResults(True, current_asteroid.a, current_asteroid.b, current_asteroid.stop_time-current_asteroid.start_time)
                         new_projectile = Projectile(gun.rect.centerx, gun.rect.top)
                         projectiles.add(new_projectile)
