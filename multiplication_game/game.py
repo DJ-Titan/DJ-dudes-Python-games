@@ -40,6 +40,8 @@ font_small = pygame.font.SysFont("monospace", 20)
 # Game variables
 score = 0
 game_over = False
+game_paused=False
+space_pressed=False # used to debounce pause key
 current_input = ""
 clock = pygame.time.Clock()
 last_fizzle_time = 0
@@ -47,6 +49,7 @@ SHIP_SPEED=5
 ASTEROID_SPEED=1.0
 game_time_start = time.time()
 game_time_stop = time.time()
+
 
 # global sprites in memory
 asteroid_sprites = [
@@ -353,6 +356,12 @@ def draw_game_over(surface, current_asteroid:Asteroid):
     restart_rect = restart_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60))
     surface.blit(restart_text, restart_rect)
 
+def draw_game_paused(surface):
+    surface.fill(BLACK)
+
+    title_text = font_large.render("PAUSED", True, WHITE)
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50))
+    surface.blit(title_text, title_rect)
 
 # --- Game Loop ---
 running = True
@@ -384,7 +393,22 @@ while running:
                     running = False
             continue
 
-        if event.type == pygame.KEYDOWN:
+        if game_paused:
+            
+            if event.type == pygame.KEYDOWN:
+                if (event.key==pygame.K_SPACE) & (not space_pressed):
+                    game_time_start=time.time()
+                    game_paused=False
+                    space_pressed=True
+
+
+        if (event.type == pygame.KEYDOWN) & (not game_paused) & (not space_pressed):
+
+            if (event.key==pygame.K_SPACE):
+                game_time_stop = time.time()
+                play_duration=game_time_stop-game_time_start
+                user_profile.writePerformanceResultsToFile(play_duration)
+                game_paused=True
 
             if (event.key==pygame.K_ESCAPE):
                 game_time_stop = time.time()
@@ -422,13 +446,16 @@ while running:
                 # Append digit to input string
                 current_input += event.unicode
 
-        if event.type == pygame.KEYUP:
-                if (event.key == pygame.K_a) | (event.key == pygame.K_LEFT):
-                    gun.moving_left = False
-                elif (event.key == pygame.K_d) | (event.key == pygame.K_RIGHT):
-                    gun.moving_right=False
+        if (event.type == pygame.KEYUP):
+                if event.key == pygame.K_SPACE:
+                    space_pressed=False
+                if (not game_paused):
+                    if (event.key == pygame.K_a) | (event.key == pygame.K_LEFT):
+                        gun.moving_left = False
+                    elif (event.key == pygame.K_d) | (event.key == pygame.K_RIGHT):
+                        gun.moving_right=False
 
-    if not game_over:
+    if (not game_over) & (not game_paused):
         # --- Update Logic ---
         starfield.update()
         all_sprites.update()
@@ -467,8 +494,8 @@ while running:
         
         draw_hud(screen)
         draw_input_box(screen, current_input, gun.fizzle_effect)
-        
-
+    elif game_paused:
+        draw_game_paused(screen)
     else:
         # Game Over Screen
         draw_game_over(screen, current_asteroid)
